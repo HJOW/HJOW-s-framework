@@ -1,12 +1,13 @@
 package com.hjow.common;
 
-public class DefaultThread implements Runnable, Releasable
+public abstract class DefaultThread implements Runnable, Releasable
 {
     protected transient boolean threadSwitch = true;
     protected transient long gap = 50;
     protected transient boolean isPaused = false;
     protected static int accums = 0;
     protected transient int id = 0;
+    protected transient Runnable endWork = null;
     
     public DefaultThread()
     {
@@ -63,14 +64,25 @@ public class DefaultThread implements Runnable, Releasable
         {
             if(! isPaused) 
             { 
-                try { work(); } catch(Exception e) { CommonCore.error(e); }
+                try { work(); } catch(Throwable e) { CommonCore.error(e); }
             }
-            try { Thread.sleep(gap); } catch(Exception ignores) {                      }
+            try { Thread.sleep(gap); } catch(Throwable ignores) { }
+        }
+        if(endWork != null)
+        {
+            endWork.run();
+            endWork = null;
         }
     }
     
-    protected void work()
+    protected abstract void work();
+    @Override
+    public boolean isReleased()
     {
-        
+        return threadSwitch;
+    }
+    protected void setEndWork(Runnable runnable)
+    {
+        endWork = runnable;
     }
 }

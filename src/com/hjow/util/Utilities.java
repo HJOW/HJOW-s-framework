@@ -39,4 +39,33 @@ public class Utilities
         if(str.equalsIgnoreCase("n") || str.equalsIgnoreCase("no") || str.equalsIgnoreCase("f") || str.equalsIgnoreCase("false")) return false;
         throw new RuntimeException("Cannot parse the object" + str + " to boolean.");
     }
+    
+    public static String parseString(Object obj)
+    {
+        return String.valueOf(obj);
+    }
+    
+    public static String parseStringWithoutNull(Object obj)
+    {
+        if(obj == null) return "";
+        return String.valueOf(obj);
+    }
+    
+    public static String toStackTrace(Throwable t)
+    {
+        StringBuilder results = new StringBuilder("Exception (");
+        results = results.append(t.getClass().getName()).append(") ").append(t.getMessage()).append("\n");
+        
+        StackTraceElement[] elements = t.getStackTrace();
+        for(StackTraceElement e : elements)
+        {
+            results = results.append("\tat").append(e.toString()).append("\n");
+        }
+        
+        Throwable causes = t.getCause();
+        if(causes == null) return results.toString();
+        
+        results = results.append("\tfrom...\n").append(toStackTrace(causes.getCause()));
+        return results.toString();
+    }
 }
