@@ -22,6 +22,8 @@ import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.JRadioButton;
 import javax.swing.JRadioButtonMenuItem;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
@@ -280,6 +282,34 @@ public class UIUtilities
         if (sel == JOptionPane.OK_OPTION)
         {
             return new String(passwordField.getPassword());
+        }
+        
+        return null;
+    }
+    
+    public static String askMultiline(Window window, Object msg)
+    {
+        String message = "";
+        if(msg != null) message = msg.toString();
+        
+        JPanel masterPanel = new JPanel();
+        JPanel[] panels = new JPanel[2];
+        initializeArray(panels);
+        
+        masterPanel.setLayout(new GridLayout(panels.length, 1));
+        addAll(masterPanel, panels);
+        
+        JLabel msgLabel = new JLabel(msg.toString());
+        panels[0].add(msgLabel);
+        
+        JTextArea area = new JTextArea();
+        panels[1].add(new JScrollPane(area));
+        area.requestFocus();
+        int sel = JOptionPane.showConfirmDialog(window, masterPanel, message, JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+
+        if (sel == JOptionPane.OK_OPTION)
+        {
+            return new String(area.getText());
         }
         
         return null;

@@ -25,6 +25,11 @@ public class Utilities
         return target.toString().equals("");
     }
     
+    public static boolean isNotEmpty(Object target)
+    {
+        return (! isEmpty(target));
+    }
+    
     public static boolean parseBoolean(Object obj)
     {
         if(isEmpty(obj)) return false;

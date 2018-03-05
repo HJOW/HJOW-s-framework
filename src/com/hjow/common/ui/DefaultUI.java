@@ -4,13 +4,22 @@ import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.Toolkit;
 import java.awt.Window;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Vector;
 
+import javax.swing.JButton;
+import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JOptionPane;
 import javax.swing.JSplitPane;
+import javax.swing.JTextField;
 
 import com.hjow.common.CommonCore;
 import com.hjow.common.exception.DefaultException;
+import com.hjow.script.DefaultScriptEngine;
+import com.hjow.script.privilege.MasterPrivilege;
+import com.hjow.script.privilege.Privilege;
 import com.hjow.util.AccountInformation;
 import com.hjow.util.UIUtilities;
 import com.hjow.util.Utilities;
@@ -21,9 +30,14 @@ public class DefaultUI implements UI
     protected transient JMenuBar menuBar;
     protected transient TransparentTextArea consoleArea;
     protected transient TransparentSplitPane consoleSplits;
+    protected transient JTextField consoleField;
     protected transient boolean inited = false;
     protected transient boolean isFirstShown = true;
     protected transient TransparentPanel contentPanel;
+    protected transient JMenu menuFile, menuTool, menuAct;
+    
+    protected transient DefaultScriptEngine consoleEngine;
+    protected transient List<String> consoleHistory;
     
     @Override
     public void init()
@@ -51,25 +65,76 @@ public class DefaultUI implements UI
         
         frame.setLayout(new BorderLayout());
         
-        TransparentPanel mainPanel;
+        TransparentPanel mainPanel, consolePanel;
         
         mainPanel = new TransparentPanel();
         mainPanel.setLayout(new BorderLayout());
         frame.add(mainPanel, BorderLayout.CENTER);
         
+        consolePanel = new TransparentPanel();
         consoleArea  = new TransparentTextArea();
         contentPanel = new TransparentPanel();
         
         consoleArea.setLineWrap(true);
+        consoleArea.setEditable(false);
+        
+        consolePanel.setLayout(new BorderLayout());
+        consolePanel.add(new TransparentScrollPane(consoleArea), BorderLayout.CENTER);
         
         consoleSplits = new TransparentSplitPane(JSplitPane.VERTICAL_SPLIT);
         consoleSplits.setTopComponent(contentPanel);
-        consoleSplits.setBottomComponent(new TransparentScrollPane(consoleArea));
+        consoleSplits.setBottomComponent(consolePanel);
+        
+        TransparentPanel consoleBottomPanel = new TransparentPanel();
+        TransparentPanel consoleRightPanel  = new TransparentPanel();
+        
+        consolePanel.add(consoleBottomPanel, BorderLayout.SOUTH);
+        
+        consoleBottomPanel.setLayout(new BorderLayout());
+        consoleRightPanel.setLayout(new BorderLayout());
+        
+        consoleField = new JTextField();
+        consoleBottomPanel.add(consoleField, BorderLayout.CENTER);
+        consoleBottomPanel.add(consoleRightPanel, BorderLayout.EAST);
+        
+        UIUtilities.addActionListener(consoleField, new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                runScript(consoleField.getText());
+            }
+        });
+        
+        JButton btnConsole = new JButton("▶");
+        consoleRightPanel.add(btnConsole, BorderLayout.CENTER);
+        
+        UIUtilities.addActionListener(btnConsole, new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                runScript(consoleField.getText());
+            }
+        });
         
         mainPanel.add(consoleSplits, BorderLayout.CENTER);
         
         menuBar = new JMenuBar();
         frame.setJMenuBar(menuBar);
+        
+        menuFile = new JMenu(CommonCore.trans("File"));
+        menuTool = new JMenu(CommonCore.trans("Tool"));
+        menuAct  = new JMenu(CommonCore.trans("Action"));
+        
+        menuBar.add(menuFile);
+        menuBar.add(menuTool);
+        menuBar.add(menuAct);
+        
+        List<Privilege> consolePriv = new ArrayList<Privilege>();
+        consolePriv.add(new MasterPrivilege());
+        consoleEngine = CommonCore.createScriptEngine(consolePriv);
+        consoleHistory = new Vector<String>();
         
         inited = true;
     }
@@ -89,6 +154,28 @@ public class DefaultUI implements UI
     public void onExit()
     {
         
+    }
+    
+    protected synchronized void runScript(String script)
+    {
+        try
+        {
+            log(">> " + script);
+            consoleField.setText("");
+            consoleHistory.add(script);
+            if(consoleHistory.size() >= 100) consoleHistory.remove(0);
+            Object obj = consoleEngine.eval(script);
+            log(obj);
+        }
+        catch(Throwable t1)
+        {
+            String errMsg = (t1 == null ? "NullPointer" : t1.getMessage());
+            log("ERROR : " + errMsg);
+        }
+        finally
+        {
+            consoleField.requestFocus();
+        }
     }
 
     @Override
